@@ -1,13 +1,20 @@
+import pickle
+from time import localtime, strftime
+import os
+
 import numpy as np
 
 class NeuralNetwork:
-    def __init__(self, input_size, output_size, hidden_layer_dims = [16, 16]):
+    def __init__(self, input_size, output_size, hidden_layer_dims = [16, 16], model_path = None):
         self._input_size = input_size
         self._output_size = output_size
         self._hidden_layer_dims = hidden_layer_dims
 
-        self._best_params = []
         self._best_accuracy = 0.0
+        self._best_params = []
+
+        if model_path != None:
+            self._best_accuracy, self._best_params = self.load_params(model_path)
 
     def initialize_params(self, layer_dims, seed = 13232):
         # Assign random weights and initialize biases
@@ -78,7 +85,7 @@ class NeuralNetwork:
     
     # Starts to train the parameters
     # this method uses the gradient descent to find the best params by minimizing the cost function.
-    def train(self, X, Y, epochs, learning_rate):
+    def train(self, X, Y, epochs, learning_rate, save=False, output="output/"):
         layer_dims = [self._input_size]
         for k in self._hidden_layer_dims:
             layer_dims.append(k)
@@ -100,11 +107,37 @@ class NeuralNetwork:
                 self._best_params = params
             
         print(f"Best accuracy reached {self._best_accuracy}")
+
+        if save:
+            if not os.path.exists(output):
+                os.makedirs(output)
+            
+            output_file_location = os.path.join(output, "model-" + strftime("%Y-%m-%d-%H-%M-%S", localtime()) + ".pkl")
+            with open(output_file_location, 'wb') as file:
+                pickle.dump([self._best_accuracy, self._best_params], file)
     
-    def predict(self, X):
-        caches = self.feedforward(X, self._best_params)
+    def predict(self, X, params = None):
+        caches = None
+        prediction = None
+
+        if params != None:
+            caches = self.feedforward(X, params)
+        else:
+            caches = self.feedforward(X, self._best_params)
+        
         prediction = np.argmax(caches[-1][1], 0)
         return prediction
+    
+    def load_params(self, model_path):
+        params, accuracy = None, None
+        with open(model_path, 'rb') as file:
+            params, accuracy = pickle.load(file)
+        
+        if params == None:
+            print(f"Failure to load parameters from pah: {model_path}")
+            return
+        
+        return params, accuracy
 
     # Does one hot encoding for the output vector Y
     def one_hot_enc(self, Y):

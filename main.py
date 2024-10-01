@@ -19,8 +19,12 @@ Y_test = labels[0:100]
 X_train = images[101:len(images) - 1].T
 Y_train = labels[101:len(images) - 1]
 
+# Step 1, train the neural network with given parameters and save the result in the output folder.
 nn = neural.NeuralNetwork(input_size = image_size, output_size = 10)
-nn.train(X_train, Y_train, 250, 0.1)
+nn.train(X_train, Y_train, 100, 0.1, save=True)
+
+# Step 2 (optional) instead of retraining, load the saved parameters from memory!
+#nn = neural.NeuralNetwork(input_size = image_size, output_size = 10, model_path="output/model-2024-10-01-17-44-40.pkl")
 
 # Test the labels of the first 100 images
 score = 0
