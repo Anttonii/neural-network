@@ -4,11 +4,11 @@ A small-scale neural network implemented in Python
 
 ## Running
 
-Get the [mnist](https://yann.lecun.com/exdb/mnist/) database files to train with and extract them into `data` folder in project root or anywhere else, just make sure that the file locations correspond with the locations of files on disk. Install dependencies with:
+Get the [mnist](https://yann.lecun.com/exdb/mnist/) database files to train with and extract them into `data` folder in project root or anywhere else, just make sure that the file location parameters in `main.py` correspond with the locations of files on disk. Install dependencies with:
 ```
 pip install -r requirements.txt
 ```
-Then run `python main.py` to see the neural network in action. Make adjustments to the `hidden_layer_dims` and `learning_rate` to see if how the neural network reacts to parameter adjustion.
+Then run `python main.py` to see the neural network in action. Make adjustments to the `hidden_layer_dims` and `learning_rate` to see how the neural network reacts to parameter adjustion.
 
 
 ## Example output

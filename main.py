@@ -24,9 +24,10 @@ nn = neural.NeuralNetwork(input_size = image_size, output_size = 10)
 nn.train(X_train, Y_train, 100, 0.1, save=True)
 
 # Step 2 (optional) instead of retraining, load the saved parameters from memory!
-#nn = neural.NeuralNetwork(input_size = image_size, output_size = 10, model_path="output/model-2024-10-01-17-44-40.pkl")
+#nn = neural.NeuralNetwork(input_size = image_size, output_size = 10)
+#nn.load_params("output/model-2024-10-01-17-44-40.pkl")
 
-# Test the labels of the first 100 images
+# Step 3 test the labels of the first 100 images
 score = 0
 failures = []
 for i in range(100):

@@ -5,16 +5,13 @@ import os
 import numpy as np
 
 class NeuralNetwork:
-    def __init__(self, input_size, output_size, hidden_layer_dims = [16, 16], model_path = None):
+    def __init__(self, input_size, output_size, hidden_layer_dims = [16, 16]):
         self._input_size = input_size
         self._output_size = output_size
         self._hidden_layer_dims = hidden_layer_dims
 
         self._best_accuracy = 0.0
         self._best_params = []
-
-        if model_path != None:
-            self._best_accuracy, self._best_params = self.load_params(model_path)
 
     def initialize_params(self, layer_dims, seed = 13232):
         # Assign random weights and initialize biases
@@ -137,15 +134,11 @@ class NeuralNetwork:
         return prediction
     
     def load_params(self, model_path):
-        params, accuracy = None, None
         with open(model_path, 'rb') as file:
-            params, accuracy = pickle.load(file)
+            self._best_accuracy, self._best_params = pickle.load(file)
         
-        if params == None:
-            print(f"Failure to load parameters from pah: {model_path}")
-            return
-        
-        return params, accuracy
+        if self._best_params == None or self._best_accuracy == None:
+            print(f"Failure to load parameters from path: {model_path}")
 
     # Does one hot encoding for the output vector Y
     def one_hot_enc(self, Y):
