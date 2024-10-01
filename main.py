@@ -21,11 +21,12 @@ Y_train = labels[101:len(images) - 1]
 
 # Step 1, train the neural network with given parameters and save the result in the output folder.
 nn = neural.NeuralNetwork(input_size = image_size, output_size = 10)
-nn.train(X_train, Y_train, 100, 0.1, save=True)
+nn.train(X_train, Y_train, 500, 0.1, save=True)
+nn.plot_accuracy()
 
 # Step 2 (optional) instead of retraining, load the saved parameters from memory!
 #nn = neural.NeuralNetwork(input_size = image_size, output_size = 10)
-#nn.load_params("output/model-2024-10-01-17-44-40.pkl")
+#nn.load_params("output/model-2024-10-01-18-25-48.pkl")
 
 # Step 3 test the labels of the first 100 images
 score = 0
@@ -44,11 +45,11 @@ for i in range(100):
 print(f"Total Score: {score}")
 print(f"Best accuracy: {nn.get_best_accuracy()}")
 
-for failure in failures:
-    image = X_test[:, failure[0]].reshape((28, 28))
-    prediction = failure[1]
-    
-    plt.gray()
-    plt.title(f"Predicted: {prediction}")
-    plt.imshow(image, interpolation='nearest')
-    plt.show()
+#for failure in failures:
+#    image = X_test[:, failure[0]].reshape((28, 28))
+#    prediction = failure[1]
+#    
+#    plt.gray()
+#    plt.title(f"Predicted: {prediction}")
+#    plt.imshow(image, interpolation='nearest')
+#    plt.show()

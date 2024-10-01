@@ -3,6 +3,7 @@ from time import localtime, strftime
 import os
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 class NeuralNetwork:
     def __init__(self, input_size, output_size, hidden_layer_dims = [16, 16]):
@@ -12,6 +13,7 @@ class NeuralNetwork:
 
         self._best_accuracy = 0.0
         self._best_params = []
+        self._accuracies = []
 
     def initialize_params(self, layer_dims, seed = 13232):
         # Assign random weights and initialize biases
@@ -47,7 +49,7 @@ class NeuralNetwork:
             caches.append((Z_val, A_val))
         
         # For the last layer use softmax instead of relu
-        Z_val_n = params['W' + str(n)].dot(caches[-1][0]) + params['b' + str(n)]
+        Z_val_n = params['W' + str(n)].dot(caches[-1][1]) + params['b' + str(n)]
         A_val_n = self.softmax(Z_val_n)
 
         caches.append((Z_val_n, A_val_n))
@@ -102,6 +104,7 @@ class NeuralNetwork:
             grads = self.back_propagation(Y, params, caches)
             params = self.update_params(learning_rate, params, grads)
             accuracy = self.get_accuracy(caches[-1][1], Y)
+            self._accuracies.append(accuracy)
 
             if i % 10 == 0:
                 print(f"Epoch: {i}")
@@ -139,6 +142,18 @@ class NeuralNetwork:
         
         if self._best_params == None or self._best_accuracy == None:
             print(f"Failure to load parameters from path: {model_path}")
+
+    # plots accuracy over epochs
+    def plot_accuracy(self):
+        if len(self._accuracies) == 0:
+            print("No accuracy data recorded, train the model before attempting to plot!")
+            return 
+        
+        plt.xlabel("Epochs")
+        plt.ylabel("Accuracy")
+        plt.ylim([0, 1])
+        plt.plot(self._accuracies)
+        plt.show()
 
     # Does one hot encoding for the output vector Y
     def one_hot_enc(self, Y):
