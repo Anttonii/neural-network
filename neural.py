@@ -87,8 +87,16 @@ class NeuralNetwork:
     # this method uses the gradient descent to find the best params by minimizing the cost function.
     def train(self, X, Y, epochs, learning_rate, save=False, output="output/"):
         layer_dims = [self._input_size]
-        for k in self._hidden_layer_dims:
-            layer_dims.append(k)
+
+        # if there are no defined hidden layers, make sure there is a layer with dimension
+        # of output size so that 2 layers are formed with dimensions
+        # input_size x output_size and output_size x output_size
+        if len(self._hidden_layer_dims) > 0:
+            for k in self._hidden_layer_dims:
+                layer_dims.append(k)
+        else:
+            layer_dims.append(self._output_size)
+        
         layer_dims.append(self._output_size)
 
         params = self.initialize_params(layer_dims)
