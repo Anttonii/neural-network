@@ -121,6 +121,14 @@ class NeuralNetwork:
                 os.makedirs(output)
             
             output_file_location = os.path.join(output, "model-" + strftime("%Y-%m-%d-%H-%M-%S", localtime()) + ".pkl")
+            output_best_location = os.path.join(output, "model-best.pkl")
+            
+            best_accuracy = self.get_best_accuracy_from_file(output_best_location)
+            if best_accuracy != None:
+                if best_accuracy < self._best_accuracy:
+                    with open(output_best_location, 'wb') as file:
+                        pickle.dump([self._best_accuracy, self._best_params], file)
+
             with open(output_file_location, 'wb') as file:
                 pickle.dump([self._best_accuracy, self._best_params], file)
     
@@ -189,3 +197,17 @@ class NeuralNetwork:
     def get_best_accuracy(self):
         return self._best_accuracy
     
+    def get_best_accuracy_from_file(self, path="output/model-best.pkl"):
+        # If there is no recorded best accuracy, return 0 so that one is created.
+        if not os.path.exists(path):
+            return 0
+
+        best_accuracy = None
+        with open(path, 'rb') as file:
+            best_accuracy, _ = pickle.load(file)
+        
+        if best_accuracy == None:
+            print(f"Failure to load parameters from path: {path}")
+            return None
+
+        return best_accuracy
