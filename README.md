@@ -10,6 +10,15 @@ pip install -r requirements.txt
 ```
 Then run `python main.py` to see the neural network in action. Make adjustments to the `hidden_layer_dims` and `learning_rate` to see how the neural network reacts to parameter adjustion.
 
+## Running the flask server
+
+A minimalistic flask server is provided in the `server.py` file. The purpose is to integrate the neural network with a website I've built. To run the flask server run the command:
+
+```
+flask --app server run
+```
+
+Afterwards posting a 28x28 grid data within a json to `http://localhost:5000` will cause the server to predict the output with the neural network and returns a single value representing the prediction.
 
 ## Example output
 

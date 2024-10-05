@@ -1,4 +1,5 @@
 import neural
+import os
 
 import idx2numpy
 import numpy as np
@@ -7,6 +8,7 @@ import typer
 
 images_file = 'data/train-images.idx3-ubyte'
 labels_file = 'data/train-labels.idx1-ubyte'
+output_best_location = os.path.join('output/', 'model-best.pkl')
 
 images = idx2numpy.convert_from_file(images_file)
 labels = idx2numpy.convert_from_file(labels_file)
@@ -23,13 +25,43 @@ Y_train = labels[101:len(images) - 1]
 app = typer.Typer()
 
 @app.command()
-def predict(data_path: str, model_path: str):
+def predict(data_path: str, model_path: str, use_best=True):
     nn = neural.NeuralNetwork(input_size = image_size, output_size = 10)
-    nn.load_params(model_path)
+    if use_best:
+        nn.load_params(output_best_location)
+    else:
+        nn.load_params(model_path)
 
     with open(data_path, 'rb') as file:
         input = file.read()
         print(f"{nn.predict(np.array(input).T)[0]}")
+
+@app.command()
+def test_best():
+    nn = neural.NeuralNetwork(input_size = image_size, output_size = 10)
+    nn.load_params(output_best_location)
+    
+    score = 0
+    failures = []
+    for i in range(100):
+        prediction = nn.predict(np.array([X_test[:, i]]).T)
+        prediction_with_probabilities = nn.predict_probabilities(np.array([X_test[:, i]]).T)
+
+        print(f"Prediction: {prediction}")
+        print(f"Prediction with probabilities: \n {prediction_with_probabilities}")
+        print(f"Label: {Y_test[i]}")
+
+        if prediction == Y_test[i]:
+            score += 1
+        else:
+            failures.append((i, prediction[0]))
+
+@app.command()
+def display(number: int = np.random.randint(low=0, high=len(images) - 1)):
+    image = images[number].reshape(28, 28)
+    plt.imshow(image, cmap='gray')
+    plt.axis('off')
+    plt.show()
 
 @app.command()
 def test():

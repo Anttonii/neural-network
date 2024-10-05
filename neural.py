@@ -144,7 +144,21 @@ class NeuralNetwork:
         prediction = np.argmax(caches[-1][1], 0)
         return prediction
     
+    def predict_probabilities(self, X, params = None):
+        caches = None
+
+        if params != None:
+            caches = self.feedforward(X, params)
+        else:
+            caches = self.feedforward(X, self._best_params)
+        
+        return caches[-1][1]
+    
     def load_params(self, model_path):
+        if model_path == None or not os.path.exists(model_path):
+            print(f"Failure to load parameters: {model_path} does not exists.")
+            return
+
         with open(model_path, 'rb') as file:
             self._best_accuracy, self._best_params = pickle.load(file)
         
@@ -157,6 +171,7 @@ class NeuralNetwork:
             print("No accuracy data recorded, train the model before attempting to plot!")
             return 
         
+        plt.title(f"Accuracy over epochs, top accuracy: {self._best_accuracy:.3f}")
         plt.xlabel("Epochs")
         plt.ylabel("Accuracy")
         plt.ylim([0, 1])
