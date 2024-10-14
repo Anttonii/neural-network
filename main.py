@@ -78,7 +78,7 @@ def display_random(number: int = np.random.randint(low=0, high=len(images) - 1))
 
 
 @ app.command()
-def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, save: bool = True, plot_result: bool = True):
+def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, hidden_layer_dims: int = 128, save: bool = True, plot_result: bool = True):
     """
     Main network training, saves best generated model.
     """
@@ -98,9 +98,11 @@ def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, sav
     if n_folds == 1:
         test_size = len(images) // 5
 
+    training_start = time.time()
     for i in range(n_folds):
         start = time.time()
-        nn = neural.NeuralNetwork(input_size=image_size, output_size=10)
+        nn = neural.NeuralNetwork(input_size=image_size, output_size=10, hidden_layer_dims=[
+                                  hidden_layer_dims, hidden_layer_dims])
 
         test_idx = kfold_indices[test_size * i:test_size * i + test_size]
         train_idx = np.concatenate((kfold_indices[0:test_size * i],
@@ -127,11 +129,14 @@ def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, sav
                 best_accuracy = nn.get_accuracy()
                 best_model = len(models) - 1
 
+    training_end = time.time()
+    print(f"Training took time in total: {training_end-training_start}")
+
     if plot_result:
         models[best_model].plot_accuracy()
 
     if save:
-        models[best_model].save_model("output/")
+        models[best_model].save_model()
 
 
 @ app.command()

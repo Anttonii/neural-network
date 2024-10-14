@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 class NeuralNetwork:
-    def __init__(self, input_size, output_size, params=None, hidden_layer_dims=[256, 256]):
+    def __init__(self, input_size, output_size, params=None, hidden_layer_dims=[128, 128]):
         self._input_size = input_size
         self._output_size = output_size
         self._hidden_layer_dims = hidden_layer_dims
@@ -134,15 +134,19 @@ class NeuralNetwork:
         return caches[-1][1]
 
     def predict_with_confidence(self, X, params=None):
+        # Assures that the input matrix is 2-dimensional.
         if X.ndim == 1:
             X = X.reshape(1, 784).T
 
         prediction = self.predict_probabilities(X, params)
         argmax = np.argmax(prediction, axis=0)
+        confidence = prediction[argmax]
+
+        # When input matrix only has a single image, return the prediction and confidence as values instead of arrays
         if X.shape[1] == 1:
-            return [argmax[0], prediction[argmax].squeeze(1)[0]]
+            return [argmax[0], confidence.squeeze(1)[0]]
         else:
-            return [argmax, prediction[argmax]]
+            return [argmax, confidence]
 
     def predict(self, X, params=None):
         return self.predict_with_confidence(X, params)[0]
@@ -160,29 +164,35 @@ class NeuralNetwork:
             print(f"Failure to load parameters from path: {model_path}")
 
     # plots accuracy over epochs
-    def plot_accuracy(self):
+    def plot_accuracy(self, show: bool = True):
         if len(self._accuracies) == 0:
             print("No accuracy data recorded, train the model before attempting to plot!")
             return
 
         plt.title(f"Accuracy over epochs, top accuracy: {
-                  self._best_accuracy:.3f}")
+                  self._best_accuracy:.3f}, hidden dimensions = {self._hidden_layer_dims}")
         plt.xlabel("Epochs")
         plt.ylabel("Accuracy")
         plt.ylim([0, 1])
         plt.plot(self._accuracies)
-        plt.show()
+        if show:
+            plt.show()
 
-    def save_model(self, output):
+    def save_model(self, output: str = "output/", save_plot: bool = True):
         assert self._best_params != None
         assert self._best_accuracy > 0.0
 
         if not os.path.exists(output):
             os.makedirs(output)
 
+        model_name = "model" + strftime("%Y-%m-%d-%H-%M-%S", localtime())
         output_file_location = os.path.join(
-            output, "model-" + strftime("%Y-%m-%d-%H-%M-%S", localtime()) + ".pkl")
+            output, model_name + ".pkl")
         output_best_location = os.path.join(output, "model-best.pkl")
+
+        if save_plot:
+            self.plot_accuracy(False)
+            plt.savefig(os.path.join(output, model_name+".png"))
 
         best_accuracy = util.get_accuracy_from_file(
             output_best_location)
