@@ -12,7 +12,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 output_best_location = os.path.join('output/', 'model-best.pkl')
 
 
-@app.post("/neural")
+@app.post("/api/neural")
 @cross_origin()
 def nn_predict():
     data = np.array(request.json['gridValues']).reshape(1, 784)
