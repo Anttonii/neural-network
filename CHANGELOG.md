@@ -2,6 +2,20 @@
 
 Notable changes and additions will be logged into this file.
 
+## [0.0.3] - 2024-16-10
+
+### Added
+
+ - Convolutional neural network model built with Pytorch.
+ - README.md now includes results for convolutional neural network.
+
+### Changes
+
+ - `server.py` now has two modes for the simple neural network and for the convolutional neural network
+   - Determining which neural network is used depends on the `method` json field that should be present in a request.
+ - K-fold cross validation is now in util.py
+ - K-fold now uses newer numpy random number generation method.
+
 ## [0.0.2] - 2024-14-10
 
 ### Added

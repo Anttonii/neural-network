@@ -12,6 +12,8 @@ Then run `python main.py train` to see the neural network in action. Make adjust
 
 ## Results
 
+### Simple Neural Network model
+
 Adjusting hidden layer dimensions gives varying levels of accuracy with the trade-off of increased running time.
 
 |Epochs|Learning rate|Hidden Layer dimensions|KFolds|Training Accuracy|Test Accuracy|Running time|
@@ -35,6 +37,16 @@ The plot is built from the following table entry:
 | 2000 | 0.01 | 128 x 128 | 1 | 97.65% | 96.3% | 7min 57s |
 
 Results give the model an approximated maximal testing accuracy of around 97.7%. **Note**: results aren't proper benchmarks and all have a sample size of **1**.
+
+### Convolutional Neural Network model
+
+|Epochs|Learning rate|KFolds|Training accuracy|Test accuracy|Running time|
+| --- | --- | --- | --- | --- | --- |
+| 20 | 0.01 | 5 | 99.9% | 98.7% | 2 min 29s |
+| 30 | 0.005 | 3 | 99.9% | 98.7% | 1 min 55s |
+| 50 | 0.005 | 5 | 99.9% | 98.8% | 6 min 19s |
+
+Convolutional neural network provides better performance and higher accuracy than the simpler neural network that does not leverage filtering.
 
 All results were computed with following computer specs and Python 3.12:
 ```

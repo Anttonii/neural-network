@@ -5,6 +5,9 @@ import util
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
+import torch.functional as F
 
 
 class NeuralNetwork:
@@ -229,13 +232,33 @@ class NeuralNetwork:
     def softmax(self, z):
         return np.exp(z) / sum(np.exp(z))
 
-    # Stable softmax that avoids overflowing
-    def stable_softmax(self, z):
-        z = z - np.max(z)
-        return self.softmax(z)
-
     def get_accuracy(self):
         return self._best_accuracy
 
     def get_params(self):
         return self._best_params
+
+
+class ConvolutionalNN(torch.nn.Module):
+    """
+    A simple convolutional neural network built with Torch.
+    """
+
+    def __init__(self):
+        super(ConvolutionalNN, self).__init__()
+
+        self.layers = nn.Sequential(
+            nn.Conv2d(1, 10, kernel_size=3),
+            nn.ReLU(),
+            nn.BatchNorm2d(10),
+            nn.MaxPool2d(2),
+            nn.Flatten(),
+            nn.Linear(13 * 13 * 10, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 10)
+        )
+
+    def forward(self, input):
+        return self.layers(input)

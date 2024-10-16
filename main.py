@@ -7,6 +7,8 @@ import time
 import idx2numpy
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
 import typer
 
 images_file = 'data/train-images.idx3-ubyte'
@@ -83,30 +85,20 @@ def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, hid
     Main network training, saves best generated model.
     """
     models = []
-    # K-fold cross validation
 
-    # The size of the data set
-    test_size = len(images) // n_folds
-    # The permutation of random indices
-    kfold_indices = np.array(np.random.permutation(len(images)))
+    # K-fold cross validation
+    kfold = util.kfold(images, n_folds)
     # Best accuracy of the trained models
     best_accuracy = 0.0
     # The index of the best model
     best_model = 0
 
-    # If we have only one fold, set test_size to 1/5th and only run one fold.
-    if n_folds == 1:
-        test_size = len(images) // 5
-
     training_start = time.time()
-    for i in range(n_folds):
+    for (i, (train_idx, test_idx)) in enumerate(kfold):
         start = time.time()
         nn = neural.NeuralNetwork(input_size=image_size, output_size=10, hidden_layer_dims=[
                                   hidden_layer_dims, hidden_layer_dims])
 
-        test_idx = kfold_indices[test_size * i:test_size * i + test_size]
-        train_idx = np.concatenate((kfold_indices[0:test_size * i],
-                                    kfold_indices[test_size*i + test_size: len(images)]))
         X_train = images[train_idx].T
         y_train = labels[train_idx]
 
@@ -118,7 +110,7 @@ def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, hid
         prediction = nn.predict(X_test)
         total = np.sum(prediction == y_test)
 
-        accuracy = total / test_size
+        accuracy = total / len(test_idx)
         end = time.time()
         print(f"#{i + 1} fold had test accuracy of {accuracy} and took {end-start}s")
 
@@ -137,6 +129,91 @@ def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, hid
 
     if save:
         models[best_model].save_model()
+
+
+@app.command()
+def train_cnn(epochs: int = 50, n_folds: int = 5, learning_rate: float = 0.005, save: bool = True):
+    """
+    Trains a convolutional neural network built with PyTorch.
+    """
+    kfold = util.kfold(images, n_folds)
+    loss_function = nn.CrossEntropyLoss()
+    accuracies = []
+    losses = []
+
+    torch.manual_seed(42)
+    if (torch.cuda.is_available()):
+        torch.set_default_device('cuda')
+
+    batch_size = 50
+    start_time = time.time()
+
+    for (fold_idx, (train_idx, test_idx)) in enumerate(kfold):
+        network = neural.ConvolutionalNN()
+        network.apply(util.reset_weights)
+
+        optimizer = torch.optim.SGD(
+            network.parameters(), lr=learning_rate, momentum=0.9)
+
+        training_batches = len(train_idx) // batch_size
+        testing_batches = len(test_idx) // batch_size
+
+        X_train = (torch.from_numpy(
+            images[train_idx]) / 255.0).reshape(len(train_idx), 1, 28, 28)
+        y_train = torch.from_numpy(labels[train_idx])
+
+        X_test = (torch.from_numpy(
+            images[test_idx]) / 255.0).reshape(len(test_idx), 1, 28, 28)
+        y_test = torch.from_numpy(labels[test_idx])
+
+        training_start = time.time()
+        training_loss = float('inf')
+        for epoch in range(epochs):
+            print(f"Starting epoch {epoch + 1}")
+            current_loss = 0.0
+            for i in range(training_batches):
+                optimizer.zero_grad()
+                outputs = network(
+                    X_train[i * batch_size: (i + 1) * batch_size])
+                loss = loss_function(
+                    outputs, y_train[i * batch_size: (i + 1) * batch_size])
+                loss.backward()
+                optimizer.step()
+                current_loss += loss.item()
+
+                if i % 50 == 49:
+                    print(f"Loss after batch: {i + 1} is {current_loss / 50}")
+                    training_loss = min(training_loss, current_loss / 50)
+                    current_loss = 0.0
+
+        losses.append(training_loss)
+        training_end = time.time()
+        print(f"Finished training in time of: {
+              training_end - training_start}s")
+
+        if save:
+            torch.save(network.state_dict(), f'./torch/model-fold-{fold_idx}')
+
+        correct, total = 0, 0
+        with torch.no_grad():
+            for bi in range(testing_batches):
+                outputs = network(
+                    X_test[bi * batch_size: (bi + 1) * batch_size])
+                _, predicted = torch.max(outputs.data, 1)
+                total += batch_size
+                correct += (predicted ==
+                            y_test[bi * batch_size: (bi + 1) * batch_size]).sum().item()
+
+        accuracy = correct / total
+        end = time.time()
+        print(
+            f"#{fold_idx + 1} fold had test accuracy of {accuracy * 100:.3f} and took {end-training_start}s")
+        accuracies.append(accuracy)
+
+    total_time = time.time()
+    print(f"Training took in total {total_time - start_time}s")
+    print(f"Best accuracy was: {np.max(accuracies) * 100:.3f}")
+    print(f"Corresponding to training loss: {np.min(losses)}")
 
 
 @ app.command()
