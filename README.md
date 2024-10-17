@@ -16,25 +16,16 @@ Then run `python main.py train` to see the neural network in action. Make adjust
 
 Adjusting hidden layer dimensions gives varying levels of accuracy with the trade-off of increased running time.
 
-|Epochs|Learning rate|Hidden Layer dimensions|KFolds|Training Accuracy|Test Accuracy|Running time|
-| --- | --- | --- | --- | --- | --- | --- |
-| 1000 | 0.05 | 16 x 16 | 1 | 96.9% | 95.7% | 2min 3s |
-| 1000 | 0.05 | 32 x 32 | 1 | 96.9% | 95.7% | 2min 19s |
-| 1000 | 0.05 | 64 x 64 | 1 | 97.7% | 96.2% | 2min 49s |
-| 1000 | 0.1 | 64 x 64 | 1 | 97.2% | 95.6% | 2min 51s |
-| 1000 | 0.05 | 128 x 128 | 1 | 99.05% | 97.4% | 4min 10s |
-| 1500 | 0.05 | 128 x 128 | 1 | 99.64% | 97.5% | 6min 16s |
-| 2000 | 0.01 | 128 x 128 | 1 | 97.65% | 96.3% | 7min 57s |
-| 1000 | 0.05 | 256 x 256 | 1 | 99.67% | 97.6% | 6min 35s |
+|Epochs|Learning rate|Hidden Layer dimensions|Batch size|KFolds|Training Accuracy|Test Accuracy|Running time|
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 30 | 0.005 | 128 x 128 | 32 | 5 | 99.9% | 97.8% | 1min 49s |
+| 30 | 0.01 | 128 x 128 | 32 | 5 | 99.9% | 98.2% | 1min 49s |
+| 50 | 0.001 | 128 x 128 | 32 | 5 | 99.9% | 98.2% | 3min 5s |
+| 30 | 0.01 | 256 x 256 | 32 | 5 | 99.9% | 98.4% | 5min 31s |
 
 Plotting the development of the accuracy over the epochs yields for example:
 
-![Model Plot Example](examples/model-example-plot.png)
-
-The plot is built from the following table entry:
-|Epochs|Learning rate|Hidden Layer dimensions|KFolds|Training Accuracy|Test Accuracy|Running time|
-| --- | --- | --- | --- | --- | --- | --- |
-| 2000 | 0.01 | 128 x 128 | 1 | 97.65% | 96.3% | 7min 57s |
+![Model Plot Example](examples/model-best-plot.png)
 
 Results give the model an approximated maximal testing accuracy of around 97.7%. **Note**: results aren't proper benchmarks and all have a sample size of **1**.
 

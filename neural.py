@@ -96,7 +96,48 @@ class NeuralNetwork:
 
     # Starts to train the parameters
     # this method uses the gradient descent to find the best params by minimizing the cost function.
-    def train(self, X, Y, epochs, learning_rate):
+    def train(self, X, y, epochs, batch_size, learning_rate):
+        params = self.init_model()
+        batches = X.shape[0] // batch_size
+
+        best_accuracy = 0.0
+        for epoch in range(epochs):
+            mean_accuracy: np.float128 = 0.0
+            accuracy: np.float128 = 0.0
+
+            for batch in range(batches):
+                params, result = self.fit(X[batch*batch_size:(batch+1)*batch_size].T,
+                                          y[batch*batch_size:(batch+1)*batch_size], params, learning_rate)
+
+                curr_accuracy = np.sum(
+                    np.argmax(result, 0) == y[batch*batch_size:(batch+1)*batch_size]) / batch_size
+                accuracy += curr_accuracy
+                mean_accuracy += curr_accuracy
+
+                if batch % 300 == 299:
+                    print(f"Batch: {batch} of epoch {epoch + 1}")
+                    print(f"Accuracy: {accuracy / 300}")
+                    best_accuracy = max(best_accuracy, accuracy / 300)
+                    accuracy = 0.0
+
+            mean_accuracy /= batches
+            self._accuracies.append(mean_accuracy)
+            print(f"Mean accuracy of epoch {epoch + 1} was: {mean_accuracy}")
+
+            if best_accuracy > self._best_accuracy:
+                self._best_accuracy = best_accuracy
+                self._best_params = params
+
+        print(f"Best accuracy reached {self._best_accuracy}")
+        return params
+
+    def fit(self, X, y, params, learning_rate):
+        caches = self.feedforward(X, params)
+        grads = self.back_propagation(y, params, caches)
+        params = self.update_params(learning_rate, params, grads)
+        return params, caches[-1][1]
+
+    def init_model(self):
         layer_dims = [self._input_size]
 
         # if there are no defined hidden layers, make sure there is a layer with dimension
@@ -110,23 +151,7 @@ class NeuralNetwork:
 
         layer_dims.append(self._output_size)
 
-        params = self.initialize_params(layer_dims)
-        for i in range(epochs):
-            caches = self.feedforward(X, params)
-            grads = self.back_propagation(Y, params, caches)
-            params = self.update_params(learning_rate, params, grads)
-            accuracy = np.sum(np.argmax(caches[-1][1], 0) == Y) / Y.size
-            self._accuracies.append(accuracy)
-
-            if i % 10 == 0:
-                print(f"Epoch: {i}")
-                print(f"Accuracy: {accuracy}")
-
-            if accuracy > self._best_accuracy:
-                self._best_accuracy = accuracy
-                self._best_params = params
-
-        print(f"Best accuracy reached {self._best_accuracy}")
+        return self.initialize_params(layer_dims)
 
     def predict_probabilities(self, X, params=None):
         if params != None:
@@ -172,11 +197,11 @@ class NeuralNetwork:
             print("No accuracy data recorded, train the model before attempting to plot!")
             return
 
-        plt.title(f"Accuracy over epochs, top accuracy: {
-                  self._best_accuracy:.3f}, hidden dimensions = {self._hidden_layer_dims}")
+        plt.title(f"Mean accuracy over epochs, top accuracy: {
+                  self._best_accuracy}")
         plt.xlabel("Epochs")
         plt.ylabel("Accuracy")
-        plt.ylim([0, 1])
+        plt.xlim([0, len(self._accuracies)])
         plt.plot(self._accuracies)
         if show:
             plt.show()
@@ -211,7 +236,7 @@ class NeuralNetwork:
     # Does one hot encoding for the output vector Y
 
     def one_hot_enc(self, Y):
-        one_hot_Y = np.zeros((Y.size, Y.max() + 1))
+        one_hot_Y = np.zeros((Y.size, 10))
         one_hot_Y[np.arange(Y.size), Y] = 1
         return one_hot_Y.T
 

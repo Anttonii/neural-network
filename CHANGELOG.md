@@ -2,12 +2,19 @@
 
 Notable changes and additions will be logged into this file.
 
+## [0.0.4] - 2024-17-10
+
+### Changes
+ - The simple neural network model now batches input resulting in higher accuracy and faster training.
+ - Updated README.md with new plots and table of recorded data over different parameters
+
 ## [0.0.3] - 2024-16-10
 
 ### Added
 
  - Convolutional neural network model built with Pytorch.
  - README.md now includes results for convolutional neural network.
+ - `test-best` command also now works with convolutional neural network.
 
 ### Changes
 

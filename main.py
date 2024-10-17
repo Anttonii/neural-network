@@ -13,7 +13,9 @@ import typer
 
 images_file = 'data/train-images.idx3-ubyte'
 labels_file = 'data/train-labels.idx1-ubyte'
-output_best_location = os.path.join('output/', 'model-best.pkl')
+
+cnn_output_best_location = os.path.join('torch/', 'model-best')
+nn_output_best_location = os.path.join('output/', 'model-best.pkl')
 
 images = idx2numpy.convert_from_file(images_file)
 labels = idx2numpy.convert_from_file(labels_file)
@@ -28,7 +30,7 @@ app = typer.Typer()
 def predict(data_path: str, model_path: str, use_best=True):
     nn = neural.NeuralNetwork(input_size=image_size, output_size=10)
     if use_best:
-        nn.load_params(output_best_location)
+        nn.load_params(nn_output_best_location)
     else:
         nn.load_params(model_path)
 
@@ -37,13 +39,13 @@ def predict(data_path: str, model_path: str, use_best=True):
         print(f"{nn.predict(np.array(input).T)[0]}")
 
 
-@app.command()
-def test_best(sample_size: int = 200):
+def test_best_nn(sample_size: int):
     """
-    Takes sample_size amount of samples from all images and tests their predictions.
+    Takes sample_size amount of samples from all images and tests their predictions with a simple neural network.
     """
+    print("Testing a simple neural network with the best recorded model.")
     nn = neural.NeuralNetwork(input_size=image_size, output_size=10)
-    nn.load_params(output_best_location)
+    nn.load_params(nn_output_best_location)
 
     score = 0
     confidence_sum = 0
@@ -68,6 +70,61 @@ def test_best(sample_size: int = 200):
     print(f"Mean confidence: {confidence_sum:.3f}")
 
 
+def test_best_cnn(sample_size: int):
+    """
+    Takes sample_size amount of samples from all images and tests their predictions with a convolutional neural network.
+    """
+    print("Testing a convolutional neural network with the best recorded model.")
+
+    cnn = neural.ConvolutionalNN()
+    cnn.load_state_dict(torch.load(
+        cnn_output_best_location, weights_only=True))
+    cnn.eval()
+
+    score = 0
+    confidence_sum = 0
+    for _ in range(sample_size):
+        index = np.random.randint(low=0, high=len(images)-1)
+        data = torch.from_numpy(
+            np.array(images[index], dtype=np.float32) / 255.0).reshape(1, 1, 28, 28)
+        output = cnn(data)
+
+        _, predicted = torch.max(output.data, 1)
+        output_sm = nn.functional.softmax(output.data, dim=1).squeeze(0)
+        confidence = output_sm[predicted.item()].item()
+
+        print(f"Prediction: {predicted.item()}, label: {
+              labels[index]}, confidence: {confidence:.3f}")
+
+        if predicted.item() == labels[index]:
+            score += 1
+
+        confidence_sum += confidence
+
+    accuracy = score / sample_size
+    confidence_sum /= sample_size
+
+    print(f"Total correct predictions: {score}")
+    print(f"Total accuracy: {accuracy}")
+    print(f"Mean confidence: {confidence_sum:.3f}")
+
+
+@app.command()
+def test_best(sample_size: int = 200, method: int = 0):
+    """
+    Takes sample_size amount of samples from all images and tests their predictions with method defining the neural network as follows:
+
+     - 0 for simple neural network
+     - 1 for convolutional neural network
+    """
+    if method == 0:
+        test_best_nn(sample_size)
+    elif method == 1:
+        test_best_cnn(sample_size)
+    else:
+        print(f"Invalid number {method}, number must be in range [0, 1]")
+
+
 @ app.command()
 def display_random(number: int = np.random.randint(low=0, high=len(images) - 1)):
     """
@@ -80,11 +137,12 @@ def display_random(number: int = np.random.randint(low=0, high=len(images) - 1))
 
 
 @ app.command()
-def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, hidden_layer_dims: int = 128, save: bool = True, plot_result: bool = True):
+def train(epochs: int = 50, n_folds: int = 5, learning_rate: float = 0.01, batch_size: int = 32, hidden_layer_dims: int = 128, save: bool = True, plot_result: bool = True):
     """
     Main network training, saves best generated model.
     """
-    models = []
+    best_model = None
+    accuracies = []
 
     # K-fold cross validation
     kfold = util.kfold(images, n_folds)
@@ -99,36 +157,41 @@ def train(epochs: int = 1500, n_folds: int = 5, learning_rate: float = 0.05, hid
         nn = neural.NeuralNetwork(input_size=image_size, output_size=10, hidden_layer_dims=[
                                   hidden_layer_dims, hidden_layer_dims])
 
-        X_train = images[train_idx].T
+        X_train = images[train_idx]
         y_train = labels[train_idx]
 
         X_test = images[test_idx].T
         y_test = labels[test_idx]
 
-        nn.train(X_train, y_train, epochs, learning_rate)
+        params = nn.train(X_train, y_train, epochs, batch_size, learning_rate)
 
-        prediction = nn.predict(X_test)
+        prediction = nn.predict(X_test, params)
         total = np.sum(prediction == y_test)
 
         accuracy = total / len(test_idx)
+        accuracies.append(accuracy)
+
         end = time.time()
         print(f"#{i + 1} fold had test accuracy of {accuracy} and took {end-start}s")
 
         if accuracy > best_accuracy:
-            models.append(nn)
+            best_model = nn
+            best_accuracy = accuracy
 
-            if nn.get_accuracy() > best_accuracy:
-                best_accuracy = nn.get_accuracy()
-                best_model = len(models) - 1
+    print(f"After {n_folds} folds, the best accuracy reached was: {
+          best_accuracy}")
 
     training_end = time.time()
     print(f"Training took time in total: {training_end-training_start}")
 
+    if best_model == None:
+        return
+
     if plot_result:
-        models[best_model].plot_accuracy()
+        best_model.plot_accuracy()
 
     if save:
-        models[best_model].save_model()
+        best_model.save_model()
 
 
 @app.command()
